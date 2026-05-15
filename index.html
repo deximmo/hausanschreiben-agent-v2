@@ -12,13 +12,14 @@
       --bg2: #1e3a8a;
       --card: #ffffff;
       --text: #111827;
-      --muted: #6b7280;
+      --muted: #64748b;
       --primary: #2563eb;
       --primary-dark: #1d4ed8;
       --green: #16a34a;
       --red: #dc2626;
-      --border: #dbeafe;
       --soft: #eff6ff;
+      --manual: #fff7ed;
+      --manual-border: #fdba74;
     }
 
     * {
@@ -114,12 +115,6 @@
       box-shadow: 0 12px 26px rgba(22, 163, 74, 0.30);
     }
 
-    .btn-submit:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
     .status {
       margin-top: 16px;
       padding: 13px;
@@ -130,6 +125,20 @@
       font-size: 14px;
       line-height: 1.45;
       white-space: pre-line;
+    }
+
+    .manual-box {
+      display: none;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 16px;
+      background: var(--manual);
+      border: 1px solid var(--manual-border);
+    }
+
+    .manual-box label {
+      margin-top: 0;
+      color: #9a3412;
     }
 
     .grid {
@@ -176,10 +185,20 @@
       <option value="">Noch keine Straße ermittelt</option>
     </select>
 
+    <div class="manual-box" id="manualStreetBox">
+      <label for="manualStrasse">Straße manuell eingeben</label>
+      <input id="manualStrasse" placeholder="z. B. Musterstraße" />
+    </div>
+
     <label for="hausnummer">Hausnummer <span class="required">*</span></label>
-    <select id="hausnummer">
+    <select id="hausnummer" onchange="onHouseNumberChange()">
       <option value="">Noch keine Hausnummer ermittelt</option>
     </select>
+
+    <div class="manual-box" id="manualHouseBox">
+      <label for="manualHausnummer">Hausnummer manuell eingeben</label>
+      <input id="manualHausnummer" placeholder="z. B. 12a" />
+    </div>
 
     <div class="grid">
       <div>
@@ -196,11 +215,14 @@
     <button class="btn-submit" id="submitButton" onclick="submitForm()">Anschreiben absenden</button>
 
     <div class="hint">
-      Hinweis: Die nächstgelegene Adresse wird automatisch vorausgewählt. Du kannst Straße und Hausnummer über die Dropdowns korrigieren.
+      Notfall-Option: Wenn Straße oder Hausnummer nicht in der Liste stehen, wähle im Dropdown „Andere ... manuell eingeben“.
     </div>
   </main>
 
   <script>
+    const MANUAL_STREET = "__manual_street__";
+    const MANUAL_HOUSE = "__manual_house__";
+
     let currentLatitude = null;
     let currentLongitude = null;
     let currentAccuracy = null;
@@ -225,7 +247,7 @@
         " m";
     }
 
-    function fillSelect(selectId, values, placeholder, selectedValue) {
+    function fillSelect(selectId, values, placeholder, selectedValue, manualValue, manualLabel) {
       const select = document.getElementById(selectId);
       select.innerHTML = "";
 
@@ -234,20 +256,24 @@
         option.value = "";
         option.textContent = placeholder;
         select.appendChild(option);
-        return;
+      } else {
+        values.forEach(value => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+
+          if (selectedValue && value === selectedValue) {
+            option.selected = true;
+          }
+
+          select.appendChild(option);
+        });
       }
 
-      values.forEach(value => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = value;
-
-        if (selectedValue && value === selectedValue) {
-          option.selected = true;
-        }
-
-        select.appendChild(option);
-      });
+      const manualOption = document.createElement("option");
+      manualOption.value = manualValue;
+      manualOption.textContent = manualLabel;
+      select.appendChild(manualOption);
     }
 
     async function getLocation() {
@@ -313,7 +339,9 @@
           "strasse",
           streetOptions,
           "Keine Straße gefunden",
-          nearestStreet
+          nearestStreet,
+          MANUAL_STREET,
+          "Andere Straße manuell eingeben"
         );
 
         let houseOptions = getHouseNumbersForStreet(nearestStreet);
@@ -326,8 +354,12 @@
           "hausnummer",
           houseOptions,
           "Keine Hausnummer gefunden",
-          nearestHouseNumber
+          nearestHouseNumber,
+          MANUAL_HOUSE,
+          "Andere Hausnummer manuell eingeben"
         );
+
+        hideManualInputs();
 
         setStatus(
           "Adresse wurde vorbefüllt. Bitte prüfen.\n" +
@@ -336,7 +368,7 @@
         );
 
       } catch (error) {
-        setStatus("Adresse konnte nicht automatisch ermittelt werden. Bitte später erneut versuchen.");
+        setStatus("Adresse konnte nicht automatisch ermittelt werden. Bitte manuell eintragen.");
       }
     }
 
@@ -441,14 +473,64 @@
 
     function onStreetChange() {
       const selectedStreet = document.getElementById("strasse").value;
-      const houseOptions = getHouseNumbersForStreet(selectedStreet);
+      const manualStreetBox = document.getElementById("manualStreetBox");
 
-      fillSelect(
-        "hausnummer",
-        houseOptions,
-        "Keine Hausnummer gefunden",
-        houseOptions[0] || ""
-      );
+      if (selectedStreet === MANUAL_STREET) {
+        manualStreetBox.style.display = "block";
+      } else {
+        manualStreetBox.style.display = "none";
+
+        const houseOptions = getHouseNumbersForStreet(selectedStreet);
+
+        fillSelect(
+          "hausnummer",
+          houseOptions,
+          "Keine Hausnummer gefunden",
+          houseOptions[0] || "",
+          MANUAL_HOUSE,
+          "Andere Hausnummer manuell eingeben"
+        );
+
+        document.getElementById("manualHouseBox").style.display = "none";
+      }
+    }
+
+    function onHouseNumberChange() {
+      const selectedHouse = document.getElementById("hausnummer").value;
+      const manualHouseBox = document.getElementById("manualHouseBox");
+
+      if (selectedHouse === MANUAL_HOUSE) {
+        manualHouseBox.style.display = "block";
+      } else {
+        manualHouseBox.style.display = "none";
+      }
+    }
+
+    function hideManualInputs() {
+      document.getElementById("manualStreetBox").style.display = "none";
+      document.getElementById("manualHouseBox").style.display = "none";
+      document.getElementById("manualStrasse").value = "";
+      document.getElementById("manualHausnummer").value = "";
+    }
+
+    function getFinalStreet() {
+      const selected = document.getElementById("strasse").value;
+
+      if (selected === MANUAL_STREET) {
+        return document.getElementById("manualStrasse").value.trim();
+      }
+
+      return selected.trim();
+    }
+
+    function getFinalHouseNumber() {
+      const selected = document.getElementById("hausnummer").value;
+
+      if (selected === MANUAL_HOUSE) {
+        return document.getElementById("manualHausnummer").value.trim();
+      }
+
+      return selected.trim();
     }
 
     function distanceMeters(lat1, lon1, lat2, lon2) {
@@ -472,8 +554,8 @@
 
     function submitForm() {
       const payload = {
-        strasse: document.getElementById("strasse").value.trim(),
-        hausnummer: document.getElementById("hausnummer").value.trim(),
+        strasse: getFinalStreet(),
+        hausnummer: getFinalHouseNumber(),
         plz: document.getElementById("plz").value.trim(),
         ort: document.getElementById("ort").value.trim(),
         gps_latitude: currentLatitude,
@@ -498,8 +580,25 @@
     }
 
     function clearAfterSubmit() {
-      fillSelect("strasse", [], "Noch keine Straße ermittelt", "");
-      fillSelect("hausnummer", [], "Noch keine Hausnummer ermittelt", "");
+      fillSelect(
+        "strasse",
+        [],
+        "Noch keine Straße ermittelt",
+        "",
+        MANUAL_STREET,
+        "Andere Straße manuell eingeben"
+      );
+
+      fillSelect(
+        "hausnummer",
+        [],
+        "Noch keine Hausnummer ermittelt",
+        "",
+        MANUAL_HOUSE,
+        "Andere Hausnummer manuell eingeben"
+      );
+
+      hideManualInputs();
 
       document.getElementById("plz").value = "";
       document.getElementById("ort").value = "";
