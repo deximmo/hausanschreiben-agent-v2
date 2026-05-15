@@ -7,85 +7,129 @@
   <title>Hausanschreiben Agent V2</title>
 
   <style>
+    :root {
+      --bg1: #0f172a;
+      --bg2: #1e3a8a;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --green: #16a34a;
+      --red: #dc2626;
+      --border: #dbeafe;
+      --soft: #eff6ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      padding: 16px;
+      min-height: 100vh;
+      padding: 18px;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f3f4f6;
-      color: #111827;
+      background:
+        radial-gradient(circle at top left, #38bdf8 0, transparent 32%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--text);
     }
 
     .app {
       max-width: 520px;
       margin: 0 auto;
-      background: white;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+      background: var(--card);
+      border-radius: 26px;
+      padding: 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--primary-dark);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 12px;
     }
 
     h1 {
       margin: 0;
-      font-size: 24px;
+      font-size: 25px;
+      letter-spacing: -0.03em;
     }
 
     .subtitle {
-      margin-top: 6px;
-      margin-bottom: 20px;
-      color: #6b7280;
+      margin-top: 7px;
+      margin-bottom: 22px;
+      color: var(--muted);
       font-size: 14px;
+      line-height: 1.45;
     }
 
     label {
       display: block;
-      margin-top: 14px;
-      margin-bottom: 6px;
-      font-weight: 700;
+      margin-top: 15px;
+      margin-bottom: 7px;
+      font-weight: 800;
       font-size: 14px;
     }
 
     input,
-    textarea,
     select,
     button {
       width: 100%;
-      box-sizing: border-box;
-      border-radius: 14px;
+      border-radius: 16px;
       font-size: 16px;
-      padding: 13px;
-      border: 1px solid #d1d5db;
+      padding: 14px;
+      border: 1px solid #cbd5e1;
+      background: white;
     }
 
-    textarea {
-      min-height: 90px;
-      resize: vertical;
+    input:focus,
+    select:focus {
+      outline: 3px solid #bfdbfe;
+      border-color: var(--primary);
     }
 
     button {
       border: none;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
-      margin-top: 14px;
     }
 
     .btn-location {
-      background: #111827;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
       color: white;
+      box-shadow: 0 12px 26px rgba(37, 99, 235, 0.35);
     }
 
-    .btn-secondary {
-      background: #e5e7eb;
-      color: #111827;
+    .btn-submit {
+      margin-top: 20px;
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: white;
+      box-shadow: 0 12px 26px rgba(22, 163, 74, 0.30);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
     }
 
     .status {
-      margin-top: 14px;
-      padding: 12px;
-      border-radius: 14px;
-      background: #f9fafb;
-      color: #374151;
+      margin-top: 16px;
+      padding: 13px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #334155;
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.45;
+      white-space: pre-line;
     }
 
     .grid {
@@ -96,55 +140,63 @@
 
     .hint {
       font-size: 12px;
-      color: #6b7280;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.45;
+    }
+
+    .required {
+      color: var(--red);
+    }
+
+    .gps-small {
       margin-top: 8px;
-      line-height: 1.4;
+      font-size: 12px;
+      color: var(--muted);
     }
   </style>
 </head>
 
 <body>
   <main class="app">
-    <h1>Hausanschreiben Agent V2</h1>
-    <div class="subtitle">Adresse per GPS vorbefüllen und danach prüfen.</div>
+    <div class="badge">Hausanschreiben Agent · V2</div>
+
+    <h1>Adresse erfassen</h1>
+    <div class="subtitle">
+      Standort abrufen, Adresse prüfen und das Anschreiben direkt auslösen.
+    </div>
 
     <button class="btn-location" onclick="getLocation()">📍 Standort ermitteln</button>
 
     <div class="status" id="status">Bereit.</div>
+    <div class="gps-small" id="gpsInfo"></div>
 
-    <label for="strasse">Straße</label>
-    <input id="strasse" placeholder="z. B. Musterstraße" autocomplete="street-address" />
+    <label for="strasse">Straße <span class="required">*</span></label>
+    <select id="strasse" onchange="onStreetChange()">
+      <option value="">Noch keine Straße ermittelt</option>
+    </select>
 
-    <label for="hausnummer">Hausnummer</label>
-    <input id="hausnummer" placeholder="z. B. 12" />
+    <label for="hausnummer">Hausnummer <span class="required">*</span></label>
+    <select id="hausnummer">
+      <option value="">Noch keine Hausnummer ermittelt</option>
+    </select>
 
     <div class="grid">
       <div>
-        <label for="plz">PLZ</label>
+        <label for="plz">PLZ <span class="required">*</span></label>
         <input id="plz" placeholder="39125" inputmode="numeric" />
       </div>
 
       <div>
-        <label for="ort">Ort</label>
+        <label for="ort">Ort <span class="required">*</span></label>
         <input id="ort" placeholder="Magdeburg" />
       </div>
     </div>
 
-    <label for="objekt_typ">Objekttyp</label>
-    <select id="objekt_typ">
-      <option value="unbekannt">Unbekannt</option>
-      <option value="einfamilienhaus">Einfamilienhaus</option>
-      <option value="mehrfamilienhaus">Mehrfamilienhaus</option>
-      <option value="grundstueck">Grundstück</option>
-    </select>
-
-    <label for="notiz">Notiz</label>
-    <textarea id="notiz" placeholder="z. B. leerstehend, sanierungsbedürftig, interessantes Objekt"></textarea>
-
-    <button class="btn-secondary" onclick="clearForm()">Formular leeren</button>
+    <button class="btn-submit" id="submitButton" onclick="submitForm()">Anschreiben absenden</button>
 
     <div class="hint">
-      Hinweis: GPS kann ungenau sein. Straße und Hausnummer vor dem späteren Absenden immer kurz prüfen.
+      Hinweis: Die nächstgelegene Adresse wird automatisch vorausgewählt. Du kannst Straße und Hausnummer über die Dropdowns korrigieren.
     </div>
   </main>
 
@@ -153,8 +205,49 @@
     let currentLongitude = null;
     let currentAccuracy = null;
 
+    let nearbyStreets = [];
+    let nearbyHouseNumbers = [];
+
     function setStatus(message) {
       document.getElementById("status").textContent = message;
+    }
+
+    function setGpsInfo() {
+      if (!currentLatitude || !currentLongitude) return;
+
+      document.getElementById("gpsInfo").textContent =
+        "GPS: " +
+        currentLatitude.toFixed(6) +
+        ", " +
+        currentLongitude.toFixed(6) +
+        " · Genauigkeit ca. " +
+        Math.round(currentAccuracy) +
+        " m";
+    }
+
+    function fillSelect(selectId, values, placeholder, selectedValue) {
+      const select = document.getElementById(selectId);
+      select.innerHTML = "";
+
+      if (!values || values.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = placeholder;
+        select.appendChild(option);
+        return;
+      }
+
+      values.forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+
+        if (selectedValue && value === selectedValue) {
+          option.selected = true;
+        }
+
+        select.appendChild(option);
+      });
     }
 
     async function getLocation() {
@@ -171,12 +264,10 @@
           currentLongitude = position.coords.longitude;
           currentAccuracy = position.coords.accuracy;
 
-          setStatus(
-            "Standort gefunden. Adresse wird gesucht..." +
-            "\nGenauigkeit: ca. " + Math.round(currentAccuracy) + " m"
-          );
+          setGpsInfo();
+          setStatus("Standort gefunden. Adresse und nahe Straßen werden gesucht...");
 
-          await reverseGeocode(currentLatitude, currentLongitude);
+          await loadAddressData(currentLatitude, currentLongitude);
         },
         function(error) {
           setStatus("Fehler bei Standortermittlung: " + error.message);
@@ -189,65 +280,236 @@
       );
     }
 
-    async function reverseGeocode(lat, lon) {
+    async function loadAddressData(lat, lon) {
       try {
-        const url =
-          "https://nominatim.openstreetmap.org/reverse?format=jsonv2" +
-          "&lat=" + encodeURIComponent(lat) +
-          "&lon=" + encodeURIComponent(lon) +
-          "&addressdetails=1";
+        const nearestAddress = await reverseGeocode(lat, lon);
 
-        const response = await fetch(url, {
-          headers: {
-            "Accept": "application/json"
-          }
-        });
+        const nearestStreet =
+          nearestAddress.road ||
+          nearestAddress.pedestrian ||
+          nearestAddress.footway ||
+          nearestAddress.path ||
+          "";
 
-        if (!response.ok) {
-          throw new Error("Geocoding fehlgeschlagen.");
+        const nearestHouseNumber = nearestAddress.house_number || "";
+
+        document.getElementById("plz").value = nearestAddress.postcode || "";
+        document.getElementById("ort").value =
+          nearestAddress.city ||
+          nearestAddress.town ||
+          nearestAddress.village ||
+          nearestAddress.municipality ||
+          "";
+
+        await loadNearbyObjects(lat, lon);
+
+        let streetOptions = nearbyStreets.slice();
+
+        if (nearestStreet && !streetOptions.includes(nearestStreet)) {
+          streetOptions.unshift(nearestStreet);
         }
 
-        const data = await response.json();
-        const address = data.address || {};
+        fillSelect(
+          "strasse",
+          streetOptions,
+          "Keine Straße gefunden",
+          nearestStreet
+        );
 
-        document.getElementById("strasse").value =
-          address.road ||
-          address.pedestrian ||
-          address.footway ||
-          address.path ||
-          "";
+        let houseOptions = getHouseNumbersForStreet(nearestStreet);
 
-        document.getElementById("hausnummer").value =
-          address.house_number || "";
+        if (nearestHouseNumber && !houseOptions.includes(nearestHouseNumber)) {
+          houseOptions.unshift(nearestHouseNumber);
+        }
 
-        document.getElementById("plz").value =
-          address.postcode || "";
-
-        document.getElementById("ort").value =
-          address.city ||
-          address.town ||
-          address.village ||
-          address.municipality ||
-          "";
+        fillSelect(
+          "hausnummer",
+          houseOptions,
+          "Keine Hausnummer gefunden",
+          nearestHouseNumber
+        );
 
         setStatus(
-          "Adresse wurde vorbefüllt. Bitte Straße und Hausnummer prüfen." +
-          "\nGenauigkeit: ca. " + Math.round(currentAccuracy) + " m"
+          "Adresse wurde vorbefüllt. Bitte prüfen.\n" +
+          "Gefundene Straßen im Umkreis: " + streetOptions.length +
+          "\nGefundene Hausnummern zur Straße: " + houseOptions.length
         );
 
       } catch (error) {
-        setStatus("Adresse konnte nicht automatisch ermittelt werden. Bitte manuell eintragen.");
+        setStatus("Adresse konnte nicht automatisch ermittelt werden. Bitte später erneut versuchen.");
       }
     }
 
-    function clearForm() {
-      document.getElementById("strasse").value = "";
-      document.getElementById("hausnummer").value = "";
+    async function reverseGeocode(lat, lon) {
+      const url =
+        "https://nominatim.openstreetmap.org/reverse?format=jsonv2" +
+        "&lat=" + encodeURIComponent(lat) +
+        "&lon=" + encodeURIComponent(lon) +
+        "&addressdetails=1";
+
+      const response = await fetch(url, {
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Reverse Geocoding fehlgeschlagen.");
+      }
+
+      const data = await response.json();
+      return data.address || {};
+    }
+
+    async function loadNearbyObjects(lat, lon) {
+      nearbyStreets = [];
+      nearbyHouseNumbers = [];
+
+      const radius = 50;
+
+      const query = `
+        [out:json][timeout:25];
+        (
+          way(around:${radius},${lat},${lon})["highway"]["name"];
+          node(around:${radius},${lat},${lon})["addr:housenumber"];
+          way(around:${radius},${lat},${lon})["addr:housenumber"];
+          relation(around:${radius},${lat},${lon})["addr:housenumber"];
+        );
+        out tags center;
+      `;
+
+      const response = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query
+      });
+
+      if (!response.ok) {
+        throw new Error("Umkreissuche fehlgeschlagen.");
+      }
+
+      const data = await response.json();
+
+      const streetSet = new Set();
+      const houseNumberList = [];
+
+      for (const element of data.elements || []) {
+        const tags = element.tags || {};
+
+        if (tags.highway && tags.name) {
+          streetSet.add(tags.name);
+        }
+
+        if (tags["addr:housenumber"]) {
+          houseNumberList.push({
+            number: tags["addr:housenumber"],
+            street: tags["addr:street"] || "",
+            lat: element.lat || element.center?.lat || null,
+            lon: element.lon || element.center?.lon || null
+          });
+        }
+      }
+
+      nearbyStreets = Array.from(streetSet).sort((a, b) => a.localeCompare(b, "de"));
+
+      nearbyHouseNumbers = houseNumberList
+        .sort((a, b) => {
+          const da = distanceMeters(currentLatitude, currentLongitude, a.lat, a.lon);
+          const db = distanceMeters(currentLatitude, currentLongitude, b.lat, b.lon);
+          return da - db;
+        });
+    }
+
+    function getHouseNumbersForStreet(streetName) {
+      let filtered = nearbyHouseNumbers;
+
+      if (streetName) {
+        filtered = nearbyHouseNumbers.filter(item =>
+          !item.street || item.street === streetName
+        );
+      }
+
+      const unique = [];
+
+      for (const item of filtered) {
+        if (item.number && !unique.includes(item.number)) {
+          unique.push(item.number);
+        }
+      }
+
+      return unique;
+    }
+
+    function onStreetChange() {
+      const selectedStreet = document.getElementById("strasse").value;
+      const houseOptions = getHouseNumbersForStreet(selectedStreet);
+
+      fillSelect(
+        "hausnummer",
+        houseOptions,
+        "Keine Hausnummer gefunden",
+        houseOptions[0] || ""
+      );
+    }
+
+    function distanceMeters(lat1, lon1, lat2, lon2) {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return 999999;
+
+      const R = 6371000;
+      const toRad = value => value * Math.PI / 180;
+
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
+    }
+
+    function submitForm() {
+      const payload = {
+        strasse: document.getElementById("strasse").value.trim(),
+        hausnummer: document.getElementById("hausnummer").value.trim(),
+        plz: document.getElementById("plz").value.trim(),
+        ort: document.getElementById("ort").value.trim(),
+        gps_latitude: currentLatitude,
+        gps_longitude: currentLongitude,
+        gps_accuracy: currentAccuracy,
+        source: "hausanschreiben-agent-v2-mobile-ui"
+      };
+
+      if (!payload.strasse || !payload.hausnummer || !payload.plz || !payload.ort) {
+        setStatus("Bitte Straße, Hausnummer, PLZ und Ort vollständig ausfüllen.");
+        return;
+      }
+
+      console.log("Formular-Payload:", payload);
+
+      setStatus(
+        "Formular wurde erfolgreich vorbereitet.\n" +
+        "Nächster Schritt: Verbindung mit n8n Webhook."
+      );
+
+      clearAfterSubmit();
+    }
+
+    function clearAfterSubmit() {
+      fillSelect("strasse", [], "Noch keine Straße ermittelt", "");
+      fillSelect("hausnummer", [], "Noch keine Hausnummer ermittelt", "");
+
       document.getElementById("plz").value = "";
       document.getElementById("ort").value = "";
-      document.getElementById("objekt_typ").value = "unbekannt";
-      document.getElementById("notiz").value = "";
-      setStatus("Formular wurde geleert.");
+      document.getElementById("gpsInfo").textContent = "";
+
+      currentLatitude = null;
+      currentLongitude = null;
+      currentAccuracy = null;
+      nearbyStreets = [];
+      nearbyHouseNumbers = [];
     }
   </script>
 </body>
