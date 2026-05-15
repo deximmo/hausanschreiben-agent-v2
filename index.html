@@ -1,62 +1,185 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Hausanschreiben Agent V2</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      margin-bottom: 20px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 14px;
+      font-size: 16px;
+      padding: 13px;
+      border: 1px solid #d1d5db;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 14px;
+    }
+
+    .btn-location {
+      background: #111827;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      background: #f9fafb;
+      color: #374151;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>Hausanschreiben Agent V2</h1>
+  <main class="app">
+    <h1>Hausanschreiben Agent V2</h1>
+    <div class="subtitle">Adresse per GPS vorbefüllen und danach prüfen.</div>
 
-  <button onclick="getLocation()">Standort ermitteln</button>
+    <button class="btn-location" onclick="getLocation()">📍 Standort ermitteln</button>
 
-  <p>Status: <span id="status">Bereit</span></p>
+    <div class="status" id="status">Bereit.</div>
 
-  <label>Straße</label><br>
-  <input id="strasse"><br><br>
+    <label for="strasse">Straße</label>
+    <input id="strasse" placeholder="z. B. Musterstraße" autocomplete="street-address" />
 
-  <label>Hausnummer</label><br>
-  <input id="hausnummer"><br><br>
+    <label for="hausnummer">Hausnummer</label>
+    <input id="hausnummer" placeholder="z. B. 12" />
 
-  <label>PLZ</label><br>
-  <input id="plz"><br><br>
+    <div class="grid">
+      <div>
+        <label for="plz">PLZ</label>
+        <input id="plz" placeholder="39125" inputmode="numeric" />
+      </div>
 
-  <label>Ort</label><br>
-  <input id="ort"><br><br>
+      <div>
+        <label for="ort">Ort</label>
+        <input id="ort" placeholder="Magdeburg" />
+      </div>
+    </div>
+
+    <label for="objekt_typ">Objekttyp</label>
+    <select id="objekt_typ">
+      <option value="unbekannt">Unbekannt</option>
+      <option value="einfamilienhaus">Einfamilienhaus</option>
+      <option value="mehrfamilienhaus">Mehrfamilienhaus</option>
+      <option value="grundstueck">Grundstück</option>
+    </select>
+
+    <label for="notiz">Notiz</label>
+    <textarea id="notiz" placeholder="z. B. leerstehend, sanierungsbedürftig, interessantes Objekt"></textarea>
+
+    <button class="btn-secondary" onclick="clearForm()">Formular leeren</button>
+
+    <div class="hint">
+      Hinweis: GPS kann ungenau sein. Straße und Hausnummer vor dem späteren Absenden immer kurz prüfen.
+    </div>
+  </main>
 
   <script>
+    let currentLatitude = null;
+    let currentLongitude = null;
+    let currentAccuracy = null;
+
+    function setStatus(message) {
+      document.getElementById("status").textContent = message;
+    }
+
     async function getLocation() {
-      document.getElementById("status").textContent = "Standort wird ermittelt...";
+      setStatus("Standort wird ermittelt...");
+
+      if (!navigator.geolocation) {
+        setStatus("Fehler: GPS wird von diesem Browser nicht unterstützt.");
+        return;
+      }
 
       navigator.geolocation.getCurrentPosition(
         async function(position) {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
+          currentLatitude = position.coords.latitude;
+          currentLongitude = position.coords.longitude;
+          currentAccuracy = position.coords.accuracy;
 
-          document.getElementById("status").textContent = "Adresse wird gesucht...";
+          setStatus(
+            "Standort gefunden. Adresse wird gesucht..." +
+            "\nGenauigkeit: ca. " + Math.round(currentAccuracy) + " m"
+          );
 
-          const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`;
-
-          const response = await fetch(url);
-          const data = await response.json();
-          const address = data.address || {};
-
-          document.getElementById("strasse").value =
-            address.road || address.pedestrian || address.footway || "";
-
-          document.getElementById("hausnummer").value =
-            address.house_number || "";
-
-          document.getElementById("plz").value =
-            address.postcode || "";
-
-          document.getElementById("ort").value =
-            address.city || address.town || address.village || address.municipality || "";
-
-          document.getElementById("status").textContent = "Adresse wurde vorbefüllt. Bitte prüfen.";
+          await reverseGeocode(currentLatitude, currentLongitude);
         },
         function(error) {
-          document.getElementById("status").textContent = "Fehler: " + error.message;
+          setStatus("Fehler bei Standortermittlung: " + error.message);
         },
         {
           enableHighAccuracy: true,
@@ -64,6 +187,67 @@
           maximumAge: 0
         }
       );
+    }
+
+    async function reverseGeocode(lat, lon) {
+      try {
+        const url =
+          "https://nominatim.openstreetmap.org/reverse?format=jsonv2" +
+          "&lat=" + encodeURIComponent(lat) +
+          "&lon=" + encodeURIComponent(lon) +
+          "&addressdetails=1";
+
+        const response = await fetch(url, {
+          headers: {
+            "Accept": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error("Geocoding fehlgeschlagen.");
+        }
+
+        const data = await response.json();
+        const address = data.address || {};
+
+        document.getElementById("strasse").value =
+          address.road ||
+          address.pedestrian ||
+          address.footway ||
+          address.path ||
+          "";
+
+        document.getElementById("hausnummer").value =
+          address.house_number || "";
+
+        document.getElementById("plz").value =
+          address.postcode || "";
+
+        document.getElementById("ort").value =
+          address.city ||
+          address.town ||
+          address.village ||
+          address.municipality ||
+          "";
+
+        setStatus(
+          "Adresse wurde vorbefüllt. Bitte Straße und Hausnummer prüfen." +
+          "\nGenauigkeit: ca. " + Math.round(currentAccuracy) + " m"
+        );
+
+      } catch (error) {
+        setStatus("Adresse konnte nicht automatisch ermittelt werden. Bitte manuell eintragen.");
+      }
+    }
+
+    function clearForm() {
+      document.getElementById("strasse").value = "";
+      document.getElementById("hausnummer").value = "";
+      document.getElementById("plz").value = "";
+      document.getElementById("ort").value = "";
+      document.getElementById("objekt_typ").value = "unbekannt";
+      document.getElementById("notiz").value = "";
+      setStatus("Formular wurde geleert.");
     }
   </script>
 </body>
