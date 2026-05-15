@@ -8,16 +8,16 @@
 
   <style>
     :root {
-      --bg1: #0f172a;
-      --bg2: #1e3a8a;
+      --bg1: #064e3b;
+      --bg2: #0f766e;
       --card: #ffffff;
       --text: #111827;
       --muted: #64748b;
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --green: #16a34a;
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --green: #059669;
       --red: #dc2626;
-      --soft: #eff6ff;
+      --soft: #ecfdf5;
       --manual: #fff7ed;
       --manual-border: #fdba74;
     }
@@ -32,7 +32,8 @@
       padding: 18px;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        radial-gradient(circle at top left, #38bdf8 0, transparent 32%),
+        radial-gradient(circle at top left, #a7f3d0 0, transparent 34%),
+        radial-gradient(circle at bottom right, #facc15 0, transparent 24%),
         linear-gradient(135deg, var(--bg1), var(--bg2));
       color: var(--text);
     }
@@ -92,7 +93,7 @@
 
     input:focus,
     select:focus {
-      outline: 3px solid #bfdbfe;
+      outline: 3px solid #bbf7d0;
       border-color: var(--primary);
     }
 
@@ -103,16 +104,16 @@
     }
 
     .btn-location {
-      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      background: linear-gradient(135deg, #0f766e, #14b8a6);
       color: white;
-      box-shadow: 0 12px 26px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 12px 26px rgba(15, 118, 110, 0.35);
     }
 
     .btn-submit {
       margin-top: 20px;
-      background: linear-gradient(135deg, #16a34a, #22c55e);
+      background: linear-gradient(135deg, #ca8a04, #eab308);
       color: white;
-      box-shadow: 0 12px 26px rgba(22, 163, 74, 0.30);
+      box-shadow: 0 12px 26px rgba(202, 138, 4, 0.30);
     }
 
     .status {
@@ -571,12 +572,18 @@
 
       console.log("Formular-Payload:", payload);
 
-      setStatus(
-        "Formular wurde erfolgreich vorbereitet.\n" +
-        "Nächster Schritt: Verbindung mit n8n Webhook."
+      alert(
+        "Bestätigung\n\n" +
+        "Die Adressdaten wurden erfolgreich vorbereitet.\n\n" +
+        "Adresse:\n" +
+        payload.strasse + " " + payload.hausnummer + "\n" +
+        payload.plz + " " + payload.ort + "\n\n" +
+        "Nach der n8n-Anbindung wird dieser Vorgang automatisch an den E-POST-Prozess übergeben."
       );
 
       clearAfterSubmit();
+
+      setStatus("Bereit für die nächste Adresse.");
     }
 
     function clearAfterSubmit() {
