@@ -221,6 +221,7 @@
   </main>
 
   <script>
+    const N8N_WEBHOOK_URL = "https://nilsmarin.app.n8n.cloud/webhook-test/hausanschreiben-v2";
     const MANUAL_STREET = "__manual_street__";
     const MANUAL_HOUSE = "__manual_house__";
 
@@ -553,38 +554,60 @@
       return R * c;
     }
 
-    function submitForm() {
-      const payload = {
-        strasse: getFinalStreet(),
-        hausnummer: getFinalHouseNumber(),
-        plz: document.getElementById("plz").value.trim(),
-        ort: document.getElementById("ort").value.trim(),
-        gps_latitude: currentLatitude,
-        gps_longitude: currentLongitude,
-        gps_accuracy: currentAccuracy,
-        source: "hausanschreiben-agent-v2-mobile-ui"
-      };
+ async function submitForm() {
+  const submitButton = document.getElementById("submitButton");
 
-      if (!payload.strasse || !payload.hausnummer || !payload.plz || !payload.ort) {
-        setStatus("Bitte Straße, Hausnummer, PLZ und Ort vollständig ausfüllen.");
-        return;
-      }
+  const payload = {
+    strasse: getFinalStreet(),
+    hausnummer: getFinalHouseNumber(),
+    plz: document.getElementById("plz").value.trim(),
+    ort: document.getElementById("ort").value.trim(),
+    gps_latitude: currentLatitude,
+    gps_longitude: currentLongitude,
+    gps_accuracy: currentAccuracy,
+    source: "hausanschreiben-agent-v2-mobile-ui"
+  };
 
-      console.log("Formular-Payload:", payload);
+  if (!payload.strasse || !payload.hausnummer || !payload.plz || !payload.ort) {
+    setStatus("Bitte Straße, Hausnummer, PLZ und Ort vollständig ausfüllen.");
+    return;
+  }
 
-      alert(
-        "Bestätigung\n\n" +
-        "Die Adressdaten wurden erfolgreich vorbereitet.\n\n" +
-        "Adresse:\n" +
-        payload.strasse + " " + payload.hausnummer + "\n" +
-        payload.plz + " " + payload.ort + "\n\n" +
-        "Dieser Vorgang wird nun an den E-POST-Prozess übermittelt und ein Schreiben wird automatisch versendet."
-      );
+  try {
+    submitButton.disabled = true;
+    submitButton.textContent = "Wird übermittelt...";
+    setStatus("Daten werden an n8n übermittelt...");
 
-      clearAfterSubmit();
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
 
-      setStatus("Bereit für die nächste Adresse.");
+    if (!response.ok) {
+      throw new Error("n8n hat einen Fehler zurückgegeben: HTTP " + response.status);
     }
+
+    alert(
+      "Bestätigung\n\n" +
+      "Dieser Vorgang wird nun an den E-POST-Prozess übermittelt und ein Schreiben wird automatisch versendet.\n\n" +
+      "Adresse:\n" +
+      payload.strasse + " " + payload.hausnummer + "\n" +
+      payload.plz + " " + payload.ort
+    );
+
+    clearAfterSubmit();
+    setStatus("Bereit für die nächste Adresse.");
+
+  } catch (error) {
+    setStatus("Fehler beim Übermitteln: " + error.message);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Anschreiben absenden";
+  }
+}
 
     function clearAfterSubmit() {
       fillSelect(
