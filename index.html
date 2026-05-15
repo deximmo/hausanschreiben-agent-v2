@@ -7,6 +7,40 @@
 </head>
 <body>
   <h1>Hausanschreiben Agent V2</h1>
-  <p>Die Webapp funktioniert.</p>
+
+  <button onclick="getLocation()">Standort ermitteln</button>
+
+  <p>Latitude: <span id="lat">–</span></p>
+  <p>Longitude: <span id="lon">–</span></p>
+  <p>Genauigkeit: <span id="acc">–</span></p>
+  <p>Status: <span id="status">Bereit</span></p>
+
+  <script>
+    function getLocation() {
+      document.getElementById("status").textContent = "Standort wird ermittelt...";
+
+      if (!navigator.geolocation) {
+        document.getElementById("status").textContent = "GPS wird nicht unterstützt.";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          document.getElementById("lat").textContent = position.coords.latitude;
+          document.getElementById("lon").textContent = position.coords.longitude;
+          document.getElementById("acc").textContent = Math.round(position.coords.accuracy) + " m";
+          document.getElementById("status").textContent = "Standort erfolgreich ermittelt.";
+        },
+        function(error) {
+          document.getElementById("status").textContent = "Fehler: " + error.message;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+    }
+  </script>
 </body>
 </html>
