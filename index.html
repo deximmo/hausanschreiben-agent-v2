@@ -10,26 +10,50 @@
 
   <button onclick="getLocation()">Standort ermitteln</button>
 
-  <p>Latitude: <span id="lat">–</span></p>
-  <p>Longitude: <span id="lon">–</span></p>
-  <p>Genauigkeit: <span id="acc">–</span></p>
   <p>Status: <span id="status">Bereit</span></p>
 
+  <label>Straße</label><br>
+  <input id="strasse"><br><br>
+
+  <label>Hausnummer</label><br>
+  <input id="hausnummer"><br><br>
+
+  <label>PLZ</label><br>
+  <input id="plz"><br><br>
+
+  <label>Ort</label><br>
+  <input id="ort"><br><br>
+
   <script>
-    function getLocation() {
+    async function getLocation() {
       document.getElementById("status").textContent = "Standort wird ermittelt...";
 
-      if (!navigator.geolocation) {
-        document.getElementById("status").textContent = "GPS wird nicht unterstützt.";
-        return;
-      }
-
       navigator.geolocation.getCurrentPosition(
-        function(position) {
-          document.getElementById("lat").textContent = position.coords.latitude;
-          document.getElementById("lon").textContent = position.coords.longitude;
-          document.getElementById("acc").textContent = Math.round(position.coords.accuracy) + " m";
-          document.getElementById("status").textContent = "Standort erfolgreich ermittelt.";
+        async function(position) {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          document.getElementById("status").textContent = "Adresse wird gesucht...";
+
+          const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`;
+
+          const response = await fetch(url);
+          const data = await response.json();
+          const address = data.address || {};
+
+          document.getElementById("strasse").value =
+            address.road || address.pedestrian || address.footway || "";
+
+          document.getElementById("hausnummer").value =
+            address.house_number || "";
+
+          document.getElementById("plz").value =
+            address.postcode || "";
+
+          document.getElementById("ort").value =
+            address.city || address.town || address.village || address.municipality || "";
+
+          document.getElementById("status").textContent = "Adresse wurde vorbefüllt. Bitte prüfen.";
         },
         function(error) {
           document.getElementById("status").textContent = "Fehler: " + error.message;
