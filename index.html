@@ -247,10 +247,46 @@
       margin: 18px 0;
     }
 
+    .confirm-code-label {
+      margin-top: 14px;
+      margin-bottom: 8px;
+      font-size: 15px;
+      font-weight: 900;
+      color: #7f1d1d;
+      text-align: left;
+    }
+
+    .confirm-code-input {
+      width: 100%;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 8px;
+      border: 3px solid #dc2626;
+      border-radius: 14px;
+      padding: 14px;
+      color: #111827;
+      background: #fff7f7;
+    }
+
+    .confirm-code-input:focus {
+      outline: 4px solid #fecaca;
+      border-color: #991b1b;
+    }
+
+    .confirm-error {
+      min-height: 20px;
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #dc2626;
+    }
+
     .confirm-buttons {
       display: flex;
       gap: 12px;
       flex-direction: column;
+      margin-top: 12px;
     }
 
     .cancel-button {
@@ -356,13 +392,30 @@
         Bist du wirklich sicher?
       </p>
 
+      <label class="confirm-code-label" for="confirmCodeInput">
+        6-stelligen Sicherheitscode eingeben
+      </label>
+
+      <input
+        id="confirmCodeInput"
+        class="confirm-code-input"
+        type="password"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        maxlength="6"
+        autocomplete="one-time-code"
+        placeholder="••••••"
+      />
+
+      <div id="confirmError" class="confirm-error"></div>
+
       <div class="confirm-buttons">
         <button type="button" class="cancel-button" onclick="closeConfirmPopup()">
           Abbrechen
         </button>
 
         <button type="button" class="danger-button" onclick="sendConfirmed()">
-          Ja, wirklich absenden
+          Code prüfen und absenden
         </button>
       </div>
     </div>
@@ -372,6 +425,7 @@
     const N8N_WEBHOOK_URL = "https://nilsmarin.app.n8n.cloud/webhook/hausanschreiben-v2";
     const MANUAL_STREET = "__manual_street__";
     const MANUAL_HOUSE = "__manual_house__";
+    const CONFIRM_CODE = "123456";
 
     let currentLatitude = null;
     let currentLongitude = null;
@@ -711,11 +765,20 @@
         payload.strasse + " " + payload.hausnummer + "<br>" +
         payload.plz + " " + payload.ort;
 
+      document.getElementById("confirmCodeInput").value = "";
+      document.getElementById("confirmError").textContent = "";
+
       document.getElementById("confirmOverlay").classList.remove("hidden");
+
+      setTimeout(function() {
+        document.getElementById("confirmCodeInput").focus();
+      }, 100);
     }
 
     function closeConfirmPopup() {
       pendingPayload = null;
+      document.getElementById("confirmCodeInput").value = "";
+      document.getElementById("confirmError").textContent = "";
       document.getElementById("confirmOverlay").classList.add("hidden");
     }
 
@@ -741,15 +804,31 @@
 
  async function sendConfirmed() {
   const submitButton = document.getElementById("submitButton");
+  const enteredCode = document.getElementById("confirmCodeInput").value.trim();
+  const confirmError = document.getElementById("confirmError");
 
   if (!pendingPayload) {
     setStatus("Fehler: Keine Versanddaten gefunden.");
     return;
   }
 
+  if (!/^\d{6}$/.test(enteredCode)) {
+    confirmError.textContent = "Bitte genau 6 Ziffern eingeben.";
+    return;
+  }
+
+  if (enteredCode !== CONFIRM_CODE) {
+    confirmError.textContent = "Falscher Sicherheitscode. Versand wurde nicht ausgelöst.";
+    document.getElementById("confirmCodeInput").value = "";
+    document.getElementById("confirmCodeInput").focus();
+    return;
+  }
+
   const payload = pendingPayload;
   pendingPayload = null;
 
+  document.getElementById("confirmCodeInput").value = "";
+  document.getElementById("confirmError").textContent = "";
   document.getElementById("confirmOverlay").classList.add("hidden");
 
   try {
